@@ -4,7 +4,7 @@ import { Mail, Phone, Linkedin } from "lucide-react"
 
 export default function Footer() {
   return (
-    <footer className='bg-yellow-300 text-black py-12 px-4 md:px-6 lg:px-8'>
+    <footer className='bg-yellow-200 text-black py-12 px-4 md:px-6 lg:px-8'>
       <div className='container mx-auto max-w-6xl'>
         <div className='grid grid-cols-1 md:grid-cols-3 gap-8'>
           <div>
@@ -23,7 +23,6 @@ export default function Footer() {
                 height={60}
                 className='mr-2 rounded-full p-1'
               />
-        
             </div>
             <p className=''>
               Acompaño procesos a través de las artes por Solange Chrem
@@ -83,25 +82,25 @@ export default function Footer() {
               <li className='flex items-center'>
                 <Mail className='w-5 h-5 mr-2' />
                 <a
-                  href='mailto:correo@amigdala.pe'
+                  href='mailto:correo@amigdala.org'
                   className='hover:underline'
                 >
-                  correo@amigdala.pe
+                  correo@amigdala.org
                 </a>
               </li>
               <li className='flex items-center'>
                 <Phone className='w-5 h-5 mr-2' />
                 <a
-                  href='tel:+51XXXXXXXXX'
+                  href='tel:+51997244742'
                   className='hover:underline'
                 >
-                  +51 XXX XXX XXX
+                  +51 997244742
                 </a>
               </li>
               <li className='flex items-center'>
                 <Linkedin className='w-5 h-5 mr-2' />
                 <a
-                  href='#'
+                  href='https://www.linkedin.com/in/solange-chrem-mesnik-714530170'
                   className='hover:underline'
                 >
                   Perfil LinkedIn de Sol
@@ -111,7 +110,7 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className='border-t border-yellow-500 mt-8 pt-8 text-center text-yellow-100'>
+        <div className=' mt-8 pt-8 text-center '>
           <p>
             &copy; {new Date().getFullYear()} AMIGDALA. Todos los derechos
             reservados.

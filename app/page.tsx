@@ -127,9 +127,7 @@ export default function Home() {
               </p>
             </div>
             <div className='bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow'>
-              <h3 className='text-xl font-semibold  mb-4'>
-                Talleres Grupales
-              </h3>
+              <h3 className='text-xl font-semibold  mb-4'>Talleres Grupales</h3>
               <p className='text-gray-700'>
                 Experiencias colectivas donde la creatividad compartida potencia
                 el desarrollo personal. Grupos reducidos que permiten atención
@@ -340,25 +338,25 @@ export default function Home() {
                 <li>
                   <strong>Correo:</strong>{' '}
                   <a
-                    href='mailto:correo@amigdala.pe'
+                    href='mailto:correo@amigdala.org'
                     className=' hover:underline'
                   >
-                    correo@amigdala.pe
+                    correo@amigdala.org
                   </a>
                 </li>
                 <li>
                   <strong>Teléfono:</strong>{' '}
                   <a
-                    href='tel:+51XXXXXXXXX'
+                    href='tel:+51997244742'
                     className='hover:underline'
                   >
-                    +51 XXX XXX XXX
+                    +51997244742
                   </a>
                 </li>
                 <li>
                   <strong>LinkedIn:</strong>{' '}
                   <a
-                    href='#'
+                    href='https://www.linkedin.com/in/solange-chrem-mesnik-714530170'
                     className=' hover:underline'
                   >
                     Perfil LinkedIn de Sol

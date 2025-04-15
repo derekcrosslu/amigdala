@@ -26,7 +26,7 @@ export default function Navbar() {
 
   return (
     <header
-      className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${isScrolled ? "bg-yellow-300 shadow-md py-2" : "bg-yellow-300/90 py-4"}`}
+      className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${isScrolled ? "bg-yellow-200 shadow-md py-2" : "bg-yellow-200/90 py-4"}`}
     >
       <div className="container mx-auto px-4 md:px-6 lg:px-8">
         <div className="flex items-center justify-between">
@@ -63,7 +63,7 @@ export default function Navbar() {
 
       {/* Mobile Navigation */}
       {isOpen && (
-        <div className="md:hidden bg-yellow-300">
+        <div className="md:hidden bg-yellow-200">
           <nav className="flex flex-col py-4 px-4">
             <MobileNavLink href="#sobre-mi" onClick={() => setIsOpen(false)}>
               Sobre Mí
@@ -100,7 +100,7 @@ function NavLink({
         transition-colors duration-300 font-medium
         ${
           isButton
-            ? 'bg-black text-white hover:text-yellow-300/90 px-4 py-2 rounded-md'
+            ? 'bg-black text-white hover:text-yellow-200/90 px-4 py-2 rounded-md'
             : 'text-black hover:text-white'
         }
       `}
@@ -114,7 +114,7 @@ function MobileNavLink({ href, children, onClick }: { href: string; children: Re
   return (
     <Link
       href={href}
-      className="py-3 text-black hover:text-white border-b border-yellow-400 font-medium"
+      className="py-3 text-black hover:text-white border-b  font-medium"
       onClick={onClick}
     >
       {children}

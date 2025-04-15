@@ -1,0 +1,10 @@
+Para el desarrollo de la pagina web de Amigdala usar Github, nodejs 20.17.0, NextJS 15, pnpm
+
+git clone https://github.com/derekcrosslu/amigdala.git
+
+cd amigdala
+
+pnpm install
+pnpm run build 
+pbpm run start 
+pnpm run dev
