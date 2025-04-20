@@ -1,14 +1,16 @@
 import Image from 'next/image';
 import { ChevronDown } from 'lucide-react';
+import MediaGallerySection from '../components/MediaGallerySection';
+import DynamicTextSection from '../components/DynamicTextSection';
 
 export default function Home() {
   return (
-    <main className='min-h-screen bg-white'>
+    <main className='min-h-screen '>
       {/* Hero Section */}
-      <section className='relative flex flex-col items-center justify-center py-20 px-4 md:px-6 lg:px-8  min-h-screen'>
+      <section className=' relative flex flex-col items-center justify-center py-20  min-h-screen'>
         <div className="absolute top-0 left-0 w-full h-full bg-[url('/images/shadow-hands.jpeg')] opacity-10 bg-cover bg-center" />
         <div className='container mx-auto max-w-5xl z-10'>
-          <div className='flex flex-col md:flex-row items-center justify-center gap-8 '>
+          <div className=' flex flex-col md:flex-row items-center justify-center gap-8 '>
             <div className='w-fit '>
               <Image
                 src='/isotipo.webp'
@@ -43,12 +45,12 @@ export default function Home() {
       </section>
 
       {/* About Section */}
-      <section
+      {/* <section
         id='sobre-mi'
         className='py-20 px-4 md:px-6 lg:px-8'
       >
         <div className='container mx-auto max-w-6xl'>
-          <h2 className='text-3xl md:text-4xl font-bold  mb-12 text-center'>
+          <h2 className='text-3xl md:text-4xl font-extrabold text-center mb-8 tracking-wide'>
             SOBRE MÍ
           </h2>
           <div className='grid grid-cols-1 md:grid-cols-2 gap-12 items-center mb-12'>
@@ -94,10 +96,10 @@ export default function Home() {
             </p>
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* Services Section */}
-      <section
+      {/* <section
         id='servicios'
         className='py-20 px-4 md:px-6 lg:px-8 bg-yellow-50 relative'
       >
@@ -179,10 +181,10 @@ export default function Home() {
             />
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* Approach Section */}
-      <section
+      {/* <section
         id='enfoque'
         className='py-20 px-4 md:px-6 lg:px-8'
       >
@@ -267,18 +269,18 @@ export default function Home() {
             el bienestar y desarrollo integral de las personas.
           </p>
         </div>
-      </section>
+      </section> */}
 
       {/* Experience Section */}
-      <section
+      {/* <section
         id='experiencia'
-        className='py-20 px-4 md:px-6 lg:px-8 bg-yellow-50'
+        className='bg-yellow-50  px-4 md:px-4'
       >
         <div className='container mx-auto max-w-6xl'>
-          <h2 className='text-3xl md:text-4xl font-bold  mb-12 text-center'>
+          <h2 className='text-4xl font-extrabold text-center mb-6 tracking-wide'>
             MI EXPERIENCIA
           </h2>
-          <div className='grid grid-cols-1 md:grid-cols-2 gap-12 items-center'>
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-12 md:items-top items-center'>
             <div>
               <Image
                 src='/images/circle-artwork.jpeg'
@@ -304,9 +306,15 @@ export default function Home() {
             </div>
           </div>
         </div>
-      </section>
+      </section> */}
 
-      {/* Contact Section */}
+      {/* Media Library Gallery Section */}
+      {/* <MediaGallerySection /> */}
+
+      {/* Dynamic Text Example Section */}
+      <DynamicTextSection />
+{/* 
+      Contact Section
       <section
         id='contacto'
         className='py-20 px-4 md:px-6 lg:px-8 relative'
@@ -371,7 +379,7 @@ export default function Home() {
             <p className='font-medium '>Sol</p>
           </div>
         </div>
-      </section>
+      </section> */}
     </main>
   );
 }
