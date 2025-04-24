@@ -82,10 +82,10 @@ export default function Footer() {
               <li className='flex items-center'>
                 <Mail className='w-5 h-5 mr-2' />
                 <a
-                  href='mailto:correo@amigdala.org'
+                  href='mailto:solangechrem@gmail.com'
                   className='hover:underline'
                 >
-                  correo@amigdala.org
+                  solangechrem@gmail.com
                 </a>
               </li>
               <li className='flex items-center'>
