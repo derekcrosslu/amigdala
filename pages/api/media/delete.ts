@@ -4,6 +4,10 @@ import { ObjectId } from 'mongodb';
 import fs from 'fs';
 import path from 'path';
 
+export const config = {
+  runtime: 'nodejs', // Explicitly set Node.js runtime (not Edge)
+};
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'DELETE') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -68,8 +72,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
     
     res.status(200).json({ message: 'Media deleted successfully' });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error deleting media:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ 
+      error: 'Internal server error', 
+      details: error.message || 'Unknown error',
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined 
+    });
   }
 }
