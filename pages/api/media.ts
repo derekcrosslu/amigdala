@@ -7,46 +7,15 @@ import clientPromise from '@/lib/db/mongodb';
 
 export const config = {
   api: {
-    bodyParser: false, // Disables Next.js body parsing to use formidable
-    responseLimit: false, // Remove response size limit
+    bodyParser: false,
+    responseLimit: false,
   },
-  runtime: 'nodejs', // Explicitly set Node.js runtime (not Edge)
+  runtime: 'nodejs',
 };
 
-// Use /tmp for temporary files in Vercel serverless functions
-// For local development, use the public/uploads directory
 const isProduction = process.env.NODE_ENV === 'production';
-const tmpDir = '/tmp';
-const publicUploadsDir = path.join(process.cwd(), 'public', 'uploads');
 
-// For formidable temporary file storage - use /tmp in production (Vercel)
-const tempFileDir = isProduction ? tmpDir : publicUploadsDir;
-
-// For final storage of files - always use public/uploads
-const uploadDir = publicUploadsDir;
-
-// Ensure directories exist
-if (!fs.existsSync(tempFileDir)) {
-  try {
-    fs.mkdirSync(tempFileDir, { recursive: true });
-    console.log(`Created temp directory: ${tempFileDir}`);
-  } catch (err) {
-    console.error(`Failed to create temp directory: ${tempFileDir}`, err);
-  }
-}
-
-if (!fs.existsSync(uploadDir) && (!isProduction || uploadDir !== tempFileDir)) {
-  try {
-    fs.mkdirSync(uploadDir, { recursive: true });
-    console.log(`Created upload directory: ${uploadDir}`);
-  } catch (err) {
-    console.error(`Failed to create upload directory: ${uploadDir}`, err);
-  }
-}
-
-import type { IncomingForm } from 'formidable';
-
-// Promise-based wrapper for formidable to use with async/await
+// Promise-based wrapper for formidable
 const parseForm = (form: any, req: NextApiRequest): Promise<{
   fields: any;
   files: any;
@@ -60,142 +29,182 @@ const parseForm = (form: any, req: NextApiRequest): Promise<{
 };
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  // Add CORS headers if needed
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  // Handle OPTIONS request for CORS
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   if (req.method === 'POST') {
     try {
-      // Make sure the upload directory exists and is writable
-      try {
-        fs.accessSync(uploadDir, fs.constants.W_OK);
-        console.log('Upload directory is writable:', uploadDir);
-      } catch (accessError) {
-        console.error('Upload directory is not writable:', uploadDir, accessError);
-        // Try to create/fix the directory
-        fs.mkdirSync(uploadDir, { recursive: true, mode: 0o755 });
-        console.log('Created upload directory with explicit permissions');
-      }
+      console.log('Starting file upload process...');
       
-      // Configuration optimized for Vercel serverless functions
+      // Configure formidable for serverless environment
       const formOptions = {
         multiples: false,
-        // Use /tmp for temporary file storage in production (Vercel)
-        uploadDir: tempFileDir,
+        // Always use /tmp in serverless environment
+        uploadDir: '/tmp',
         keepExtensions: true,
-        // Enforce 4.5MB limit for Vercel serverless functions (4.5MB = 4.5 * 1024 * 1024 bytes)
-        maxFileSize: 4.5 * 1024 * 1024, 
+        maxFileSize: 4.5 * 1024 * 1024, // 4.5MB limit
         filename: (name: any, ext: any, part: any, form: any) => {
-          // Generate a unique filename to avoid conflicts
           return `${Date.now()}-${Math.round(Math.random() * 1000)}${ext}`;
         },
         filter: (part: any) => {
-          // Only allow certain file types
-          return part.mimetype?.includes('image') || false;
+          // Allow images only
+          const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+          return validTypes.includes(part.mimetype);
         },
       };
       
-      console.log('Upload attempt with options:', JSON.stringify(formOptions, null, 2));
-      
-      // Create the form instance
+      // Create form instance
       const form = formidable(formOptions);
       
-      // Use our promise-based wrapper
+      // Parse the form
       const { fields, files } = await parseForm(form, req).catch(err => {
-        console.error('Detailed form parsing error:', err);
-        throw new Error(`Form parsing failed: ${err.message || 'Unknown error'}`);
+        console.error('Form parsing error:', err);
+        throw new Error(`Form parsing failed: ${err.message}`);
       });
       
       const file = files.file;
       if (!file) {
+        console.error('No file in request');
         return res.status(400).json({ error: 'No file provided' });
       }
       
       const fileObj = Array.isArray(file) ? file[0] : file;
-      console.log('File received:', fileObj.originalFilename, 'Size:', fileObj.size);
+      console.log('File received:', {
+        name: fileObj.originalFilename,
+        size: fileObj.size,
+        type: fileObj.mimetype
+      });
       
-      // Get the temporary filename
-      let filename = path.basename(fileObj.filepath);
-      console.log('Saved as temporary file:', filename, 'At path:', fileObj.filepath);
+      // Get file size before processing
+      const fileSize = fileObj.size;
       
-      // In production (Vercel), upload to Vercel Blob storage
-      let blobUrl = '';
-      if (isProduction) {
+      let fileUrl = '';
+      let filePath = '';
+      
+      if (isProduction && process.env.BLOB_READ_WRITE_TOKEN) {
+        // Production: Upload to Vercel Blob
         try {
-          console.log('Uploading file to Vercel Blob storage');
+          console.log('Uploading to Vercel Blob storage...');
           
-          // Create a read stream from the temp file
-          const fileStream = fs.createReadStream(fileObj.filepath);
+          // Read file as buffer
+          const fileBuffer = fs.readFileSync(fileObj.filepath);
           
-          // Generate a unique name for the blob
-          const blobName = `uploads/${Date.now()}-${Math.round(Math.random() * 1000)}-${fileObj.originalFilename || filename}`;
+          // Generate blob name
+          const blobName = `uploads/${Date.now()}-${fileObj.originalFilename || 'image'}`;
           
-          // Upload the file to Vercel Blob
-          const blob = await put(blobName, fileStream, {
+          // Upload to Vercel Blob
+          const blob = await put(blobName, fileBuffer, {
             access: 'public',
             addRandomSuffix: true,
+            contentType: fileObj.mimetype,
           });
           
-          blobUrl = blob.url;
-          console.log('Successfully uploaded to Vercel Blob:', blobUrl);
+          fileUrl = blob.url;
+          filePath = blob.url; // Use full URL as path in production
+          console.log('Blob upload successful:', fileUrl);
           
-          // Remove temp file after successful upload
+          // Clean up temp file
           try {
             fs.unlinkSync(fileObj.filepath);
-          } catch (unlinkError) {
-            console.log('Warning: Failed to delete temp file:', unlinkError);
-            // Non-fatal error, continue
+          } catch (e) {
+            console.log('Could not delete temp file:', e);
           }
-        } catch (uploadError: any) {
-          console.error('Failed to upload to Vercel Blob:', uploadError);
-          return res.status(500).json({ 
-            error: 'Blob upload failed', 
-            details: uploadError.message || 'Unknown error' 
-          });
+        } catch (blobError: any) {
+          console.error('Blob upload error:', blobError);
+          // Clean up temp file on error
+          try {
+            fs.unlinkSync(fileObj.filepath);
+          } catch (e) {}
+          throw new Error(`Blob upload failed: ${blobError.message}`);
         }
-      }
-      
-      // Set up file paths for database
-      let filePath, finalFilePath, apiUrl;
-      
-      if (isProduction && blobUrl) {
-        // In production, use the Blob URL
-        filePath = blobUrl; // Store the full Blob URL as the path
-        apiUrl = blobUrl;   // API URL is the same as the Blob URL
-        finalFilePath = fileObj.filepath; // For size calculation only
       } else {
-        // In development, use the local file path
-        filePath = '/uploads/' + filename;
-        apiUrl = '/api/image?path=' + encodeURIComponent(filePath); // Use the image API route
-        finalFilePath = path.join(process.cwd(), 'public', filePath);
-        
-        // Check if file exists at final destination in dev mode
-        if (!fs.existsSync(finalFilePath)) {
-          return res.status(500).json({ error: 'File save failed - not found in final location' });
+        // Development: Save locally
+        try {
+          const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+          
+          // Ensure upload directory exists
+          if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+          }
+          
+          // Generate filename
+          const filename = `${Date.now()}-${fileObj.originalFilename || 'image'}`;
+          const destPath = path.join(uploadDir, filename);
+          
+          // Copy file from temp to public/uploads
+          const fileData = fs.readFileSync(fileObj.filepath);
+          fs.writeFileSync(destPath, fileData);
+          
+          filePath = `/uploads/${filename}`;
+          fileUrl = filePath;
+          
+          console.log('Local file saved:', destPath);
+          
+          // Clean up temp file
+          try {
+            fs.unlinkSync(fileObj.filepath);
+          } catch (e) {
+            console.log('Could not delete temp file:', e);
+          }
+        } catch (localError: any) {
+          console.error('Local save error:', localError);
+          // Clean up temp file on error
+          try {
+            fs.unlinkSync(fileObj.filepath);
+          } catch (e) {}
+          throw new Error(`Local save failed: ${localError.message}`);
         }
       }
       
-      const stats = fs.statSync(finalFilePath);
+      // Create database entry
       const newItem = {
-        name: fileObj.originalFilename || filename,
-        path: filePath, // Original path for reference
-        apiUrl: apiUrl, // API-routed URL for frontend use
+        name: fileObj.originalFilename || 'unnamed',
+        path: filePath,
+        apiUrl: fileUrl, // Direct URL to the file
         type: fileObj.mimetype || 'image',
-        size: `${Math.round(stats.size / 1024)} KB`,
+        size: `${Math.round(fileSize / 1024)} KB`,
         uploaded: new Date(),
       };
       
-      // Save to database
-      const client = await clientPromise;
-      const db = client.db();
-      const media = db.collection('media');
-      const result = await media.insertOne(newItem);
-      
-      console.log('Media saved to database with ID:', result.insertedId);
-      res.status(200).json({ ...newItem, _id: result.insertedId });
+      // Save to MongoDB
+      try {
+        const client = await clientPromise;
+        const db = client.db();
+        const media = db.collection('media');
+        const result = await media.insertOne(newItem);
+        
+        console.log('Saved to database:', result.insertedId);
+        
+        // Return success response
+        res.status(200).json({ 
+          ...newItem, 
+          _id: result.insertedId,
+          success: true 
+        });
+      } catch (dbError: any) {
+        console.error('Database error:', dbError);
+        // File was uploaded but DB save failed
+        // Still return the file info but with a warning
+        res.status(200).json({ 
+          ...newItem,
+          warning: 'File uploaded but database save failed',
+          success: true
+        });
+      }
       
     } catch (error: any) {
-      console.error('Upload failed with error:', error);
+      console.error('Upload handler error:', error);
       res.status(500).json({ 
         error: 'Image upload failed', 
         details: error.message || 'Unknown error',
-        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        success: false
       });
     }
   } else if (req.method === 'GET') {
@@ -206,15 +215,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const items = await media.find({}).sort({ uploaded: -1 }).toArray();
       res.status(200).json(items);
     } catch (error: any) {
-      console.error('DB error:', error);
+      console.error('Database fetch error:', error);
       res.status(500).json({ 
         error: 'Failed to fetch media', 
-        details: error.message || 'Unknown error',
-        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        details: error.message || 'Unknown error'
       });
     }
   } else {
-    res.setHeader('Allow', ['GET', 'POST']);
+    res.setHeader('Allow', ['GET', 'POST', 'OPTIONS']);
     res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 }
