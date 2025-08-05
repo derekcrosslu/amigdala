@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import formidable from 'formidable';
 import fs from 'fs';
 import path from 'path';
+import { put } from '@vercel/blob';
 import clientPromise from '@/lib/db/mongodb';
 
 export const config = {
@@ -113,47 +114,68 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       let filename = path.basename(fileObj.filepath);
       console.log('Saved as temporary file:', filename, 'At path:', fileObj.filepath);
       
-      // In production (Vercel), move from /tmp to the final destination
-      if (isProduction && tempFileDir !== uploadDir) {
+      // In production (Vercel), upload to Vercel Blob storage
+      let blobUrl = '';
+      if (isProduction) {
         try {
-          // Create destination path
-          const destPath = path.join(uploadDir, filename);
-          console.log(`Moving file from ${fileObj.filepath} to ${destPath}`);
+          console.log('Uploading file to Vercel Blob storage');
           
-          // Copy the file from temp to final destination
-          const fileContent = fs.readFileSync(fileObj.filepath);
-          fs.writeFileSync(destPath, fileContent);
+          // Create a read stream from the temp file
+          const fileStream = fs.createReadStream(fileObj.filepath);
           
-          // Remove temp file after successful copy
-          fs.unlinkSync(fileObj.filepath);
-          console.log('Successfully moved file to final destination');
-        } catch (moveError: any) {
-          console.error('Failed to move file to final destination:', moveError);
+          // Generate a unique name for the blob
+          const blobName = `uploads/${Date.now()}-${Math.round(Math.random() * 1000)}-${fileObj.originalFilename || filename}`;
+          
+          // Upload the file to Vercel Blob
+          const blob = await put(blobName, fileStream, {
+            access: 'public',
+            addRandomSuffix: true,
+          });
+          
+          blobUrl = blob.url;
+          console.log('Successfully uploaded to Vercel Blob:', blobUrl);
+          
+          // Remove temp file after successful upload
+          try {
+            fs.unlinkSync(fileObj.filepath);
+          } catch (unlinkError) {
+            console.log('Warning: Failed to delete temp file:', unlinkError);
+            // Non-fatal error, continue
+          }
+        } catch (uploadError: any) {
+          console.error('Failed to upload to Vercel Blob:', uploadError);
           return res.status(500).json({ 
-            error: 'File move failed', 
-            details: moveError.message || 'Unknown error' 
+            error: 'Blob upload failed', 
+            details: uploadError.message || 'Unknown error' 
           });
         }
       }
       
-      // Store the file path for database reference
-      const filePath = `/uploads/${filename}`;
+      // Set up file paths for database
+      let filePath, finalFilePath, apiUrl;
       
-      // Create API-routed URL for client-side use
-      const fileUrl = `/api/image?path=/uploads/${encodeURIComponent(filename)}`;
-      
-      // Verify the file exists in final location
-      const finalFilePath = path.join(uploadDir, filename);
-      if (!fs.existsSync(finalFilePath)) {
-        console.error('File does not exist after processing:', finalFilePath);
-        return res.status(500).json({ error: 'File save failed - not found in final location' });
+      if (isProduction && blobUrl) {
+        // In production, use the Blob URL
+        filePath = blobUrl; // Store the full Blob URL as the path
+        apiUrl = blobUrl;   // API URL is the same as the Blob URL
+        finalFilePath = fileObj.filepath; // For size calculation only
+      } else {
+        // In development, use the local file path
+        filePath = '/uploads/' + filename;
+        apiUrl = '/api/image?path=' + encodeURIComponent(filePath); // Use the image API route
+        finalFilePath = path.join(process.cwd(), 'public', filePath);
+        
+        // Check if file exists at final destination in dev mode
+        if (!fs.existsSync(finalFilePath)) {
+          return res.status(500).json({ error: 'File save failed - not found in final location' });
+        }
       }
       
       const stats = fs.statSync(finalFilePath);
       const newItem = {
         name: fileObj.originalFilename || filename,
         path: filePath, // Original path for reference
-        apiUrl: fileUrl, // API-routed URL for frontend use
+        apiUrl: apiUrl, // API-routed URL for frontend use
         type: fileObj.mimetype || 'image',
         size: `${Math.round(stats.size / 1024)} KB`,
         uploaded: new Date(),
