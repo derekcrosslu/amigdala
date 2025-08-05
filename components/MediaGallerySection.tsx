@@ -33,7 +33,7 @@ export default function MediaGallerySection() {
           {media.map((item: any) => (
             <div key={item._id} className="bg-white rounded-lg shadow-md overflow-hidden">
               <img
-                src={item.path}
+                src={(item.apiUrl || (item.path.startsWith('/uploads/') ? `/api/image?path=${encodeURIComponent(item.path)}` : item.path))}
                 alt={item.name}
                 className="object-cover w-full h-48"
               />

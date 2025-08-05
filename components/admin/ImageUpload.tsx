@@ -91,7 +91,7 @@ export function ImageUpload({
         {previewUrl ? (
           <div className="relative">
             <img 
-              src={previewUrl} 
+              src={previewUrl?.startsWith('/uploads/') ? `/api/image?path=${encodeURIComponent(previewUrl)}` : previewUrl} 
               alt="Image preview" 
               className="max-w-full h-auto rounded-md mx-auto"
               style={{ maxHeight: "200px" }}

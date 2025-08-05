@@ -203,7 +203,7 @@ export default function ApproachSectionEditor() {
               {formData.featuredImage && (
                 <div className="w-full h-40 relative rounded-md overflow-hidden border border-gray-300 mb-2">
                   <img
-                    src={formData.featuredImage}
+                    src={formData.featuredImage?.startsWith('/uploads/') ? `/api/image?path=${encodeURIComponent(formData.featuredImage)}` : formData.featuredImage}
                     alt="Imagen destacada"
                     className="object-cover w-full h-full"
                   />

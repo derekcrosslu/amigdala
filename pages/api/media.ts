@@ -29,11 +29,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
       const fileObj = Array.isArray(file) ? file[0] : file;
       const filename = path.basename(fileObj.filepath);
-      const fileUrl = `/uploads/${filename}`;
+      // Store the file path for database reference
+      const filePath = `/uploads/${filename}`;
+      // Create API-routed URL for client-side use
+      // Use the new query-based API route for more reliable image serving
+  const fileUrl = `/api/image?path=/uploads/${encodeURIComponent(filename)}`;
       const stats = fs.statSync(fileObj.filepath);
       const newItem = {
         name: fileObj.originalFilename || filename,
-        path: fileUrl,
+        path: filePath, // Original path for reference
+        apiUrl: fileUrl, // API-routed URL for frontend use
         type: fileObj.mimetype || 'image',
         size: `${Math.round(stats.size / 1024)} KB`,
         uploaded: new Date(),
