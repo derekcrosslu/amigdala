@@ -3,6 +3,7 @@ import clientPromise from '@/lib/db/mongodb';
 import { ObjectId } from 'mongodb';
 import fs from 'fs';
 import path from 'path';
+import { del } from '@vercel/blob';
 
 export const config = {
   runtime: 'nodejs', // Explicitly set Node.js runtime (not Edge)
@@ -47,13 +48,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(404).json({ error: 'Media not found' });
     }
     
-    // Get the file path and try to delete the physical file
-    const filePath = path.join(process.cwd(), 'public', mediaItem.path);
-    
+    // Get the file path/url and try to delete the physical file
     try {
-      // Check if file exists before trying to delete
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
+      const isProduction = process.env.NODE_ENV === 'production';
+      const filePath = mediaItem.path;
+      
+      // Check if this is a Blob URL
+      if (filePath && filePath.startsWith('https://') && process.env.BLOB_READ_WRITE_TOKEN) {
+        // Handle Blob storage deletion
+        console.log('Attempting to delete Blob file:', filePath);
+        try {
+          await del(filePath);
+          console.log('Blob file deleted successfully');
+        } catch (blobError) {
+          console.error('Error deleting Blob file:', blobError);
+          // Continue with database deletion even if file deletion fails
+        }
+      } else if (!isProduction) {
+        // Local file in development
+        const localFilePath = path.join(process.cwd(), 'public', mediaItem.path);
+        // Check if file exists before trying to delete
+        if (fs.existsSync(localFilePath)) {
+          fs.unlinkSync(localFilePath);
+          console.log('Local file deleted successfully');
+        }
       }
     } catch (fileError) {
       console.error('Error deleting file:', fileError);
