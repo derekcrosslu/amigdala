@@ -33,7 +33,7 @@ export default function Home() {
               </div>
 
               <h2 className='text-xl md:text-2xl font-medium text-gray-400 mb-2'>
-                Acompaño procesos a través de las artes
+                Acompaño procesos terapéuticos a través de las artes
               </h2>
               <p className='text-lg italic text-gray-500'>por Solange Chrem</p>
             </div>

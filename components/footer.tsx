@@ -25,7 +25,7 @@ export default function Footer() {
               />
             </div>
             <p className=''>
-              Acompaño procesos a través de las artes por Solange Chrem
+              Acompaño procesos terapéuticos a través de las artes por Solange Chrem
               <br />
             </p>
           </div>
